@@ -100,7 +100,8 @@ def format_row_to_json(row):
         "商品名称": clean_column(row['商品名称']),
         "规格": clean_column(row['规格']),
         "折扣价": clean_column(row['折扣价']),
-        "原价": clean_column(row['原价'])
+        "原价": clean_column(row['原价']),
+        "销量": clean_column(row['销售']),
     }
     return json.dumps(data_dict, ensure_ascii=False)
 
@@ -116,17 +117,11 @@ def column_update(df: pd.DataFrame):
     # df = df[['商品ID', '商品名称', '规格', '折扣价', '原价', '']]
     # 商品信息=商品名称+ 规格+ 折扣价+原价
     df['原始商品销量'] = 0
-    df['相似商品销量'] = 0
-    df['相似商品1销量'] = 0
-    df['相似商品2销量'] = 0
-    df['相似商品3销量'] = 0
-    df['相似商品4销量'] = 0
-    df['相似商品5销量'] = 0
     df_new = df[
-        ['商品ID', '商品名称', 'origin_url', '原始商品销量', '排除商品', '相似商品', 'llm_image_url', '相似商品销量',
-         '相似商品1', 'top1_image_url', '相似商品1销量', '相似商品2', 'top2_image_url', '相似商品2销量',
-         '相似商品3', 'top3_image_url', '相似商品3销量', '相似商品4', 'top4_image_url', '相似商品4销量',
-         '相似商品5', 'top5_image_url', '相似商品5销量']]
+        ['商品ID', '商品名称', 'origin_url', '原始商品销量', '排除商品',
+         '相似商品', 'llm_image_url', '相似商品1', 'top1_image_url',
+         '相似商品2', 'top2_image_url', '相似商品3', 'top3_image_url',
+         '相似商品4', 'top4_image_url', '相似商品5', 'top5_image_url', ]]
     df_new.rename(columns={'商品名称': '商品信息'}, inplace=True)
 
     # 迭代df调整内容
@@ -137,32 +132,26 @@ def column_update(df: pd.DataFrame):
 
         if llm_match is not None:
             df_new.at[index, '相似商品'] = format_row_to_json(llm_match)
-            df_new.at[index, '相似商品销量'] = int(llm_match['销售'])
 
         top1 = pandas_str_to_series(row['相似商品1'])
         if top1 is not None:
             df_new.at[index, '相似商品1'] = format_row_to_json(top1)
-            df_new.at[index, '相似商品1销量'] = int(top1['销售'])
 
         top2 = pandas_str_to_series(row['相似商品2'])
         if top2 is not None:
             df_new.at[index, '相似商品2'] = format_row_to_json(top2)
-            df_new.at[index, '相似商品2销量'] = int(top2['销售'])
 
         top3 = pandas_str_to_series(row['相似商品3'])
         if top3 is not None:
             df_new.at[index, '相似商品3'] = format_row_to_json(top3)
-            df_new.at[index, '相似商品3销量'] = int(top3['销售'])
 
         top4 = pandas_str_to_series(row['相似商品4'])
         if top4 is not None:
             df_new.at[index, '相似商品4'] = format_row_to_json(top4)
-            df_new.at[index, '相似商品4销量'] = int(top4['销售'])
 
         top5 = pandas_str_to_series(row['相似商品5'])
         if top5 is not None:
             df_new.at[index, '相似商品5'] = format_row_to_json(top5)
-            df_new.at[index, '相似商品5销量'] = int(top5['销售'])
 
     return df_new
 
@@ -178,6 +167,7 @@ async def main():
     # target_df = load_excel("../data/美团-邻侣超市（虹桥中心店）全量商品信息20251109.xlsx")
     # owner_df = load_excel("../data/sku_kyd_sampled.xlsx").iloc[:100]
     owner_df = load_excel("../../data/top3相似人工标注数据_需要大模型识别.xlsx").iloc[:10]
+    # owner_df = load_excel("../../data/top3相似人工标注数据_需要大模型识别.xlsx")
     # owner_df = load_excel("../output/llm_error_df.xlsx")
     target_df = load_excel("../../data/附件2-美团邻侣全量去重商品1109.xlsx")
     owner_df = owner_df.drop_duplicates(subset=['商品ID'])
