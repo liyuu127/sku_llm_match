@@ -161,15 +161,11 @@ async def main():
     start_time = time.time()
     # owner_df 自有商品
     # target_df 对标商品
-    # owner_df = load_excel("../data/美团-快驿点特价超市(虹桥店)全量商品信息20251109.xlsx").iloc[:1000]
-    # target_df = load_excel("../data/美团-邻侣超市（虹桥中心店）全量商品信息20251109.xlsx").iloc[:1000]
-    # owner_df = load_excel("../data/美团-快驿点特价超市(虹桥店)全量商品信息20251109.xlsx")
-    # target_df = load_excel("../data/美团-邻侣超市（虹桥中心店）全量商品信息20251109.xlsx")
-    # owner_df = load_excel("../data/sku_kyd_sampled.xlsx").iloc[:100]
-    owner_df = load_excel("../../data/top3相似人工标注数据_需要大模型识别.xlsx").iloc[:10]
-    # owner_df = load_excel("../../data/top3相似人工标注数据_需要大模型识别.xlsx")
-    # owner_df = load_excel("../output/llm_error_df.xlsx")
-    target_df = load_excel("../../data/附件2-美团邻侣全量去重商品1109.xlsx")
+    owner_df_path = "../../data/top3相似人工标注数据_需要大模型识别.xlsx"
+    target_df_path = "../../data/附件2-美团邻侣全量去重商品1109.xlsx"
+    # owner_df = load_excel(owner_df_path).iloc[:10]
+    owner_df = load_excel(owner_df_path)
+    target_df = load_excel(target_df_path)
     owner_df = owner_df.drop_duplicates(subset=['商品ID'])
     target_df = target_df.drop_duplicates(subset=['商品ID'])
     # 打印前几行数据
