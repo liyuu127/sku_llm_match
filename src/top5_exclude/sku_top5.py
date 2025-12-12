@@ -1,5 +1,6 @@
 import asyncio
 import json
+import math
 import re
 import time
 import uuid
@@ -11,6 +12,7 @@ from top5_exclude.llm_exclude_top5 import llm_exclude_fill
 from top5_exclude.llm_match_top5 import llm_match_fill
 from top5_exclude.sku_filter_top5 import preprocess_candidate_tokens, process_owner_data_async
 from top5_exclude.utils import load_excel, save_excel_async, pic_download
+from tqdm import tqdm
 
 # 控制最大并发任务数
 MAX_CONCURRENCY = 100
@@ -163,8 +165,8 @@ async def main():
     # target_df 对标商品
     owner_df_path = "../../data/top3相似人工标注数据_需要大模型识别.xlsx"
     target_df_path = "../../data/附件2-美团邻侣全量去重商品1109.xlsx"
-    # owner_df = load_excel(owner_df_path).iloc[:10]
-    owner_df = load_excel(owner_df_path)
+    owner_df = load_excel(owner_df_path).iloc[:10]
+    # owner_df = load_excel(owner_df_path)
     target_df = load_excel(target_df_path)
     owner_df = owner_df.drop_duplicates(subset=['商品ID'])
     target_df = target_df.drop_duplicates(subset=['商品ID'])
@@ -188,21 +190,35 @@ async def main():
     # prompt_v = "prompt_v3"
     prefix = "../../output/top5相似_"
 
-    output_path = prefix + model_name + "_" + prompt_v + "_500_" + suffix + ".xlsx"
-    output_path_nopic = prefix + "nopic_" + model_name + "_" + prompt_v + "_500_" + suffix + ".xlsx"
-    output_path_nollm = prefix + "nollm" + model_name + "_" + prompt_v + "_500_" + suffix + ".xlsx"
+    file_ext = ".xlsx"
+    output_path = prefix + model_name + "_" + prompt_v + "_500_" + suffix
+    output_path_nopic = prefix + "nopic_" + model_name + "_" + prompt_v + "_500_" + suffix
+    output_path_nollm = prefix + "nollm" + model_name + "_" + prompt_v + "_500_" + suffix
 
-    # await save_excel_async(owner_df, output_path_nollm)
+    # await save_excel_async(owner_df, output_path_nollm+file_ext)
     if LLM_MATCH:
         await llm_exclude_fill(owner_df)
         await llm_match_fill(owner_df)
-        # await save_excel_async(owner_df, output_path_nopic)
+        # await save_excel_async(owner_df, output_path_nopic+file_ext)
         pic_url_fill(owner_df)
         df_new = column_update(owner_df)
-        pic_download(df_new, output_path)
+        await batch_pic_file_download(df_new, file_ext, output_path)
 
     end_time = time.time()
     print(f"总耗时：{end_time - start_time:.2f}秒")
+
+
+async def batch_pic_file_download(df_new, file_ext, output_path):
+    # 单个文件记录大小
+    FILE_BATCH_SIZE = 3
+    for i, start_idx in enumerate(tqdm(range(0, len(df_new), FILE_BATCH_SIZE), desc="批次导出进度")):
+        # 切片
+        df_batch = df_new.iloc[start_idx: start_idx + FILE_BATCH_SIZE].copy()
+
+        # 生成新路径
+        new_file_name = f"{output_path}_batch_{i + 1}{file_ext}"
+        # 执行函数
+        pic_download(df_batch, new_file_name)
 
 
 if __name__ == '__main__':

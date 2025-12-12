@@ -14,6 +14,7 @@ from PIL import Image as PILImage
 from openpyxl import Workbook
 from openpyxl.drawing.image import Image
 from openpyxl.utils import get_column_letter
+from openpyxl.drawing.spreadsheet_drawing import AnchorMarker, TwoCellAnchor  # 关键导入
 
 # 读取brand.txt解析为列表
 # 获取当前文件夹路径
@@ -259,15 +260,21 @@ def pic_download(df: pd.DataFrame, output_path):
                         # 创建 Openpyxl 图片对象
                         img = Image(output)
 
-                        # *** 关键修复 ***
-                        # 直接使用 add_image 并指定单元格位置即可。
-                        # openpyxl 的 add_image 默认创建的 Anchor 在较新版本中
-                        # 配合设置好的行高/列宽，通常能满足"随单元格移动"的需求。
-                        # 之前代码手动构造 AnchorMarker 且混合 add_image 容易导致文件损坏或显示异常。
+                        _col_start = col_idx - 1
+                        _row_start = row_idx - 1
 
-                        cell_pos = f"{get_column_letter(col_idx)}{row_idx}"
-                        ws.add_image(img, cell_pos)
+                        # 右下角锚点 (即下一个单元格的左上角)
+                        _col_end = col_idx
+                        _row_end = row_idx
 
+                        marker_from = AnchorMarker(col=_col_start, colOff=0, row=_row_start, rowOff=0)
+                        marker_to = AnchorMarker(col=_col_end, colOff=0, row=_row_end, rowOff=0)
+
+                        # editAs='twoCell' 对应 Excel 中的 "Move and size with cells"
+                        img.anchor = TwoCellAnchor(editAs='twoCell', _from=marker_from, to=marker_to)
+
+                        # 添加图片 (此时不需要指定 cell_pos，因为 anchor 已经包含了位置信息)
+                        ws.add_image(img)
                         # 如果需要，也可以保留文本值作为备份（可选，会覆盖在图片下或显示在公式栏）
                         # ws.cell(row=row_idx, column=col_idx, value=cell_val)
 
